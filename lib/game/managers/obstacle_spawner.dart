@@ -31,7 +31,7 @@ class ObstacleSpawner extends Component with HasGameRef<FlappyGame> {
       // So there's no immediate jump on screen
       // Y is 0 if top-left is zero-based.
       // We handle top/bottom inside the Obstacle itself, so just 0 here:
-      Vector2(gameRef.size.x + 40, 0),
+      Vector2(gameRef.size.x + 30, 0),
     );
     gameRef.add(obstacle);
   }

@@ -9,6 +9,7 @@ import 'dart:math';
 import 'package:flappy_dash_turbo_trials/game/components/player.dart';
 import 'package:flappy_dash_turbo_trials/game/managers/obstacle_spawner.dart';
 import 'package:flappy_dash_turbo_trials/core/constants.dart';
+import 'dart:ui';
 
 class FlappyGame extends FlameGame
     with HasCollisionDetection, TapCallbacks {
@@ -23,31 +24,47 @@ class FlappyGame extends FlameGame
   Player get player => _player;
 
   @override
+  @override
   Future<void> onLoad() async {
     await super.onLoad();
-    // Load images / assets if needed:
-    // For example: await images.load('player_bird.png');
 
-    // Add collision detection boundary
     add(ScreenHitbox());
 
-    // Create Player
+    // 🔒 Invisible ceiling
+    add(
+      RectangleComponent(
+        position: Vector2(0, 0),
+        size: Vector2(size.x, 1),
+        paint: Paint()..color = const Color(0x00000000), // transparent
+      )..add(RectangleHitbox()),
+    );
+
+    // 🔒 Invisible floor
+    add(
+      RectangleComponent(
+        position: Vector2(0, size.y),
+        size: Vector2(size.x, 1),
+        anchor: Anchor.bottomLeft,
+        paint: Paint()..color = const Color(0x00000000),
+      )..add(RectangleHitbox()),
+    );
+
     _player = Player(
       onHitObstacle: _handleGameOver,
       onPassObstacle: _incrementScore,
     );
     add(_player);
 
-    // Create Obstacle Spawner
     _obstacleSpawner = ObstacleSpawner();
     add(_obstacleSpawner);
   }
+
 
   void _incrementScore() {
     score += GameConstants.pointsPerObstacle;
     // Every time we pass 10 points, we can increase difficulty:
     if (score % GameConstants.difficultyIncreaseInterval == 0) {
-      _obstacleSpawner.increaseBPM(5); // Increase BPM by some fixed amount
+      _obstacleSpawner.increaseBPM(10); // Increase BPM by some fixed amount
     }
   }
 

@@ -1,72 +1,76 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
+import 'package:flame/extensions.dart';
 import 'package:flappy_dash_turbo_trials/game/flappy_game.dart';
 import 'package:flappy_dash_turbo_trials/core/constants.dart';
+import 'package:flappy_dash_turbo_trials/game/components/obstacle_pipe.dart';
+import 'dart:math' as math;
 
 class Obstacle extends PositionComponent
     with CollisionCallbacks, HasGameRef<FlappyGame> {
-  // We can add two SpriteComponents: top and bottom
-  late SpriteComponent topObstacle;
-  late SpriteComponent bottomObstacle;
+  late ObstaclePipe topPipe;
+  late ObstaclePipe bottomPipe;
 
-  bool hasScored = false; // used to ensure we only increment score once per pair
+  bool hasScored = false;
 
-  Obstacle({Vector2? position})
-      : super(
+  Obstacle({
+    Vector2? position,
+  }) : super(
     position: position ?? Vector2.zero(),
-    size: Vector2(60, 200), // default widths/heights
+    // The bounding box that contains both pipes. We'll position them inside it.
+    size: Vector2(60, 200),
   );
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
-    // Random vertical offset for the gap
     final gapCenterY = gameRef.size.y * 0.3 +
         (gameRef.size.y * 0.4) * (gameRef.random.nextDouble() - 0.5);
 
     final gap = GameConstants.obstacleGap;
 
-    // Top obstacle
-    topObstacle = SpriteComponent()
+    topPipe = ObstaclePipe()
       ..sprite = await gameRef.loadSprite('obstacle.png')
       ..size = Vector2(size.x, size.y)
-      ..position = Vector2(0, gapCenterY - gap / 2 - size.y)
-      ..anchor = Anchor.topLeft;
-    topObstacle.add(RectangleHitbox());
-    add(topObstacle);
+      ..angle = math.pi
+      ..anchor = Anchor.bottomLeft
+      ..position = Vector2(0, gapCenterY - gap / 2);
 
-    // Bottom obstacle
-    bottomObstacle = SpriteComponent()
+    topPipe.add(RectangleHitbox());
+    add(topPipe);
+
+    bottomPipe = ObstaclePipe()
       ..sprite = await gameRef.loadSprite('obstacle.png')
       ..size = Vector2(size.x, size.y)
-      ..position = Vector2(0, gapCenterY + gap / 2)
-      ..anchor = Anchor.topLeft;
-    bottomObstacle.add(RectangleHitbox());
-    add(bottomObstacle);
+      ..anchor = Anchor.topLeft
+      ..position = Vector2(0, gapCenterY + gap / 2);
+
+    bottomPipe.add(RectangleHitbox());
+    add(bottomPipe);
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Move obstacles to the left
+    // Move left at a constant speed
     x -= GameConstants.obstacleSpeed * dt;
 
-    // If player passes the obstacle (center of obstacle crosses player's x),
-    // increment the score (only once).
-    final playerX = gameRef.player.x; // Might need a getter in FlappyGame
-    if (!hasScored && x + width < playerX) {
+    // Once the player's x surpasses (x + width), the player has passed the pipes => increment score
+    final playerX = gameRef.player.x;
+    if (!hasScored && (x + width) < playerX) {
       gameRef.score += GameConstants.pointsPerObstacle;
       hasScored = true;
     }
 
-    // Remove obstacle if it goes off screen completely
-    if (x + width < 0) {
+    // Remove once the obstacle is fully off-screen
+    if ((x + width) < 0) {
       removeFromParent();
     }
   }
 }
+
 //Each Obstacle is effectively a pair of top/bottom pipes (or obstacles).
 //
 // We set a random vertical gap location.

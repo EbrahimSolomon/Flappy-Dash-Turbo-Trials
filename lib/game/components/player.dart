@@ -1,9 +1,11 @@
 import 'package:flame/components.dart';
 import 'package:flame/collisions.dart';
 import 'package:flame/extensions.dart';
-
+import 'package:flappy_dash_turbo_trials/game/components/obstacle.dart';
 import 'package:flappy_dash_turbo_trials/game/flappy_game.dart';
 import 'package:flappy_dash_turbo_trials/core/constants.dart';
+import 'package:flappy_dash_turbo_trials/game/components/obstacle_pipe.dart';
+
 
 class Player extends SpriteComponent
     with CollisionCallbacks, HasGameRef<FlappyGame> {
@@ -32,11 +34,18 @@ class Player extends SpriteComponent
     velocity.y += GameConstants.gravity * dt;
     position += velocity * dt;
 
-    // If we fall below the screen, game over
-    if (y > gameRef.size.y + size.y) {
-      onHitObstacle?.call();
+    // Clamp position within top and bottom of the screen
+    if (y < size.y / 2) {
+      y = size.y / 2;
+      velocity.y = 0;
+    }
+
+    if (y > gameRef.size.y - size.y / 2) {
+      y = gameRef.size.y - size.y / 2;
+      velocity.y = 0;
     }
   }
+
 
   void flap() {
     velocity.y = GameConstants.flapForce;
@@ -46,8 +55,11 @@ class Player extends SpriteComponent
   void onCollision(Set<Vector2> intersectionPoints, PositionComponent other) {
     super.onCollision(intersectionPoints, other);
 
-    // If we collided with an Obstacle, call onHitObstacle
-    if (other is SpriteComponent && other is! Player) {
+    print('Player collided with: ${other.runtimeType}');
+
+    // ✅ Game over only when hitting a pipe
+    if (other is ObstaclePipe) {
+      print('☠️ Collision with obstacle pipe!');
       onHitObstacle?.call();
     }
   }
